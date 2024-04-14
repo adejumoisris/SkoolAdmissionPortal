@@ -23,24 +23,6 @@ public class SecurityConfiguration {
             "/swagger-ui/**", "/swagger-ui.html", "/configuration/**", "swagger**/**", "/webjars/**", "/v3/api-docs/**",
     };
 
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf((AbstractHttpConfigurer::disable))
-//                .authorizeRequests()
-//                .requestMatchers(AUTH_WHITELIST)
-//                .permitAll()
-//                .anyRequest()
-//                .authenticated()
-//                .and()
-//                .sessionManagement()
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                .and()
-//                .authenticationProvider(authenticationProvider)
-//                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
 @Bean
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
