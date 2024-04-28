@@ -13,5 +13,7 @@ public interface AuthServices {
 
     ResponseEntity<Map<String, Object>> login(AuthenticationRequest request);
 
-    ResponseEntity<Map<String, Object>> forgotPassword(AuthenticationRequest request);
+    ResponseEntity<Map<String, Object>> sendResetPasswordMail(AuthenticationRequest request);
+
+    String validateResetPasswordToken(String resetPinToken);
 }

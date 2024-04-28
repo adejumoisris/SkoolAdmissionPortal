@@ -57,6 +57,8 @@ public class User implements UserDetails {
     @LastModifiedDate
     private Date deletedAt;
     private boolean deleted = false;
+    private String passwordResetToken;
+    private Date passwordResetTokenTimeStamp;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

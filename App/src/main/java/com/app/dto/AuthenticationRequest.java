@@ -22,4 +22,5 @@ public class AuthenticationRequest {
     private String phoneNumber;
     private String countryOfPermanentResidence;
     private String role;
+    private String passwordResetToken;
 }

@@ -37,10 +37,17 @@ public class AuthController {
         return authServices.login(request);
     }
 
+    @PostMapping("forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody AuthenticationRequest request) {
+
+        return authServices.sendResetPasswordMail(request);
+    }
+
     @GetMapping("send-otp")
     public ResponseEntity sendOtp() {
 
         emailService.sendEmail("abdullahi@onepipe.io", "Test Email", "This is a test email");
+//        emailService.sendEmailWithHtml("abdullahi@onepipe.io");
 
         return ResponseEntity.ok("Email sent successfully");
     }
