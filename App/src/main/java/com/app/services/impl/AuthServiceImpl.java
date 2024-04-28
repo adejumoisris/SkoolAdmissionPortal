@@ -250,7 +250,7 @@ public class AuthServiceImpl implements AuthServices {
             user.setPasswordResetTokenTimeStamp(new Date());
             userRepository.save(user);
 
-            String resetLink = "http://localhost:3000/reset-password?token=" + token;
+            String resetLink = "http://localhost:3000/create-password?token=" + token;
             String subject = "Reset Password";
             String htmlBody = "<html><body>" +
                     "<div style=\"display:flex; flex-direction:column; align-items:center\">" +
