@@ -1,30 +1,33 @@
 package com.app.config;
 
+import com.app.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtService {
 
-    private static final long EXPIRATION_TIME_MS = 600_000L;
+    private static final long EXPIRATION_TIME_MS = 6_000_000L;
 
     @Value("${app.jwt.secret}")
     String SECRET_KEY;
@@ -44,9 +47,17 @@ public class JwtService {
 
     public String generateToken(Map<String, Object> extractClaims, UserDetails userDetails) {
 
+        User user = (User) userDetails;
+        Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+        String authoritiesString = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
         return Jwts
                 .builder()
                 .setClaims(extractClaims)
+                .claim("authority", authoritiesString)
+                .claim("firstName", user.getFirstName())
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_MS))
