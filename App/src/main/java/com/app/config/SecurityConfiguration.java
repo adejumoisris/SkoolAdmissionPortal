@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests()
                 .requestMatchers(AUTH_WHITELIST)
                 .permitAll()
+                .requestMatchers("/api/courses/**").permitAll()
                 .anyRequest()
                 .authenticated()
 //            .permitAll()

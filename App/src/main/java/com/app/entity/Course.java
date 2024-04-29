@@ -25,7 +25,7 @@ public class Course {
     @Enumerated(value = EnumType.STRING)
     private CourseType courseType;
     @Enumerated(value = EnumType.STRING)
-    private StudyMode study;
+    private StudyMode studyMode;
     private Integer entryYear;
     private Integer entryMonth;
 
