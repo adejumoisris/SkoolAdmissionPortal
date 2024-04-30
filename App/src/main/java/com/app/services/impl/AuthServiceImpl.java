@@ -80,12 +80,6 @@ public class AuthServiceImpl implements AuthServices {
 
             User savedUser = userRepository.save(user);
 
-//            String jwtToken = jwtService.generateToken(savedUser);
-//            AuthenticationResponse authenticationResponse = AuthenticationResponse.builder()
-//                    .firstName(savedUser.getFirstName())
-//                    .token(jwtToken)
-//                    .build();
-
             AuthenticationRequest authenticationRequest = AuthenticationRequest.builder()
                     .email(savedUser.getEmail())
                     .countryOfPermanentResidence(savedUser.getCountryOfResidence())
@@ -96,7 +90,7 @@ public class AuthServiceImpl implements AuthServices {
                     .build();
 
             responsePayload.put("status", "success");
-            responsePayload.put("message", "User created successfully");
+            responsePayload.put("message", "Account created successfully");
             responsePayload.put("data", authenticationRequest);
 
             return new ResponseEntity<>(responsePayload, HttpStatus.CREATED);
@@ -114,52 +108,78 @@ public class AuthServiceImpl implements AuthServices {
 
     @Override
     public ResponseEntity<Map<String, Object>> createPassword(AuthenticationRequest request) {
+        log.info("Payload: {}", request);
         Map<String, Object> responsePayload = new HashMap<>();
 
-        if (request.getPasswordResetToken() != null) {
-
-        String validation = validateResetPasswordToken(request.getPasswordResetToken());
-
-            if (validation.equalsIgnoreCase(INVALID_TOKEN)) {
-
-                responsePayload.put("status", "failed");
-                responsePayload.put("message", validation);
-                responsePayload.put("data", null);
-
-                return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
-            }
-
-            if (validation.equalsIgnoreCase(EXPIRED_TOKEN)) {
-
-                responsePayload.put("status", "failed");
-                responsePayload.put("message", validation);
-                responsePayload.put("data", null);
-
-                return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
-            }
-        }
-
         try {
-            Optional<User> userByEmail = userRepository.findFirstByEmail(request.getEmail());
-            if (userByEmail.isEmpty()) {
-                responsePayload.put("status", "failed");
-                responsePayload.put("message", "Email already exists");
+
+            if (request.getPasswordResetToken() != null) {
+                log.info("Password reset request received with token: {}", request.getPasswordResetToken());
+
+                String validation = validateResetPasswordToken(request.getPasswordResetToken());
+
+                if (validation.equalsIgnoreCase(INVALID_TOKEN)) {
+
+                    responsePayload.put("status", "failed");
+                    responsePayload.put("message", validation);
+                    responsePayload.put("data", null);
+
+                    return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
+                }
+
+                if (validation.equalsIgnoreCase(EXPIRED_TOKEN)) {
+
+                    responsePayload.put("status", "failed");
+                    responsePayload.put("message", validation);
+                    responsePayload.put("data", null);
+
+                    return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
+                }
+
+                if (validation.equalsIgnoreCase(VALID_TOKEN)) {
+                    log.info("Request valid. Proceeding with password reset.");
+
+                    Optional<User> optionalUser = userRepository.findFirstByPasswordResetToken(request.getPasswordResetToken());
+
+                    User user = optionalUser.get();
+
+                    log.info("{} created new pin", user.getEmail());
+
+                    user.setPassword(passwordEncoder.encode(request.getPassword()));
+                    user.setPasswordResetToken(null);
+                    userRepository.save(user);
+
+                    log.info("Password reset successful for {}", user.getEmail());
+
+                    responsePayload.put("status", "success");
+                    responsePayload.put("message", "Pin reset successful.");
+                    responsePayload.put("data", null);
+
+                    return new ResponseEntity<>(responsePayload, HttpStatus.OK);
+                }
+
+            } else {
+                Optional<User> userByEmail = userRepository.findFirstByEmail(request.getEmail());
+                if (userByEmail.isEmpty()) {
+                    responsePayload.put("status", "failed");
+                    responsePayload.put("message", "Email already exists");
+                    responsePayload.put("data", null);
+
+                    return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
+                }
+
+                log.info("{} is creating password", request.getEmail());
+
+                User user = userByEmail.get();
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                userRepository.save(user);
+
+                responsePayload.put("status", "success");
+                responsePayload.put("message", "Password created successfully");
                 responsePayload.put("data", null);
 
-                return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(responsePayload, HttpStatus.OK);
             }
-
-            log.info("{} is creating password", request.getEmail());
-
-            User user = userByEmail.get();
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            userRepository.save(user);
-
-            responsePayload.put("status", "success");
-            responsePayload.put("message", "Password created successfully");
-            responsePayload.put("data", null);
-
-            return new ResponseEntity<>(responsePayload, HttpStatus.OK);
 
         } catch (Exception e) {
 
@@ -169,6 +189,12 @@ public class AuthServiceImpl implements AuthServices {
 
             return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
         }
+
+        responsePayload.put("status", "failed");
+        responsePayload.put("message", "Invalid request");
+        responsePayload.put("data", null);
+
+        return new ResponseEntity<>(responsePayload, HttpStatus.BAD_REQUEST);
     }
 
     @Override
@@ -212,7 +238,7 @@ public class AuthServiceImpl implements AuthServices {
                     .build();
 
             responsePayload.put("status", "success");
-            responsePayload.put("message", "User logged in successfully");
+            responsePayload.put("message", "Log in successful");
             responsePayload.put("data", authenticationResponse);
 
             return new ResponseEntity<>(responsePayload, HttpStatus.OK);
@@ -250,23 +276,23 @@ public class AuthServiceImpl implements AuthServices {
             user.setPasswordResetTokenTimeStamp(new Date());
             userRepository.save(user);
 
-            String resetLink = "http://localhost:3000/create-password?token=" + token;
+            String resetLink = "http://localhost:3000/create-password/" + token;
             String subject = "Reset Password";
             String htmlBody = "<html><body>" +
-                    "<div style=\"display:flex; flex-direction:column; align-items:center\">" +
-                    "<img height=\"200px\" src=\"" + logoUrl + "\" alt=\"My logo\"/>" +
+                    "<div style=\"align-items:center\">" +
+                    "<img height=\"200px\" src=\"logoUrl\" alt=\"My logo\"/>" +
                     "<h1 style=\"text-align:center;\">Request for Password Reset.</h1>" +
                     "<p style=\"font-size:18px; text-align:center\">" +
-                    "You recently requested to reset your password for your account. " +
-                    "Please click the link below to reset it, Reset link remains valid for 10 Minutes. " +
-                    "Kindly ignore this email if you didn't request for a password reset." +
+                    "You recently requested to reset your password for your account. Please click the link below to reset it, Reset link remains valid for 10 Minutes. Kindly ignore this email if you didn't request for a password reset." +
                     "</p>" +
                     "<br>" +
-                    "<button style=\"padding:15px; background:green; border-radius:20px; border:none; font-size:20px;\"><a style=\"text-decoration:none; color:white;\" href=\"" + resetLink + "\">Reset Password</a></button>" +
+                    "<div style=\"margin: 2% 35%\">" +
+                    "<button style=\"padding:15px; background:#248232; border-radius:20px; border:none; font-size:20px;\"><a style=\"text-decoration:none; color:white;\" href=\"" + resetLink + "\">Reset Password</a></button>" +
+                    "</div>" +
                     "</div>" +
                     "</body></html>";
 
-            emailService.sendEmail(request.getEmail(), subject, htmlBody);
+            emailService.sendEmailWithHtml(request.getEmail(), subject, htmlBody);
 
             responsePayload.put("status", "success");
             responsePayload.put("message", "Reset password mail sent successfully.");
