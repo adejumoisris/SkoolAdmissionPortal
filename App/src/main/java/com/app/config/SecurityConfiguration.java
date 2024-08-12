@@ -21,8 +21,8 @@ public class SecurityConfiguration {
 
     private final String[] AUTH_WHITELIST = {
             "/swagger-ui/**", "/swagger-ui.html", "/configuration/**", "swagger**/**", "/webjars/**",
-            "/v3/api-docs/**", "/api/v1/auth/**", "/app/**", "static/app/**"
-    };
+            "/v3/api-docs/**", "/api/v1/auth/**", "/app/**", "static/app/**", "/api/v1/google/**"
+    };//https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
